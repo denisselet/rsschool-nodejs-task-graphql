@@ -26,7 +26,7 @@ const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
       });
 
       if (profile === null) {
-        throw fastify.httpErrors.notFound('Profile not found');
+        throw fastify.httpErrors.notFound();
       }
 
       return profile;
@@ -41,7 +41,7 @@ const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
       },
     },
     async function (request, reply): Promise<ProfileEntity> {
-      if (request.body.memberTypeId.length < 7) {
+      if (Object.keys(request.body).length < 7) {
         throw fastify.httpErrors.badRequest();
       }
       try {
@@ -99,24 +99,14 @@ const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
         equals: request.params.id,
       });
       if (profile === null) {
-        throw fastify.httpErrors.notFound('Profile not found');
+        throw fastify.httpErrors.badRequest();
       }
       if (Object.keys(request.body)) {
         throw fastify.httpErrors.badRequest();
       }
-      // const req = await fastify.db.profiles.change(request.params.id, {
-      //   avatar: request.body.avatar,
-      //   sex: request.body.sex,
-      //   birthday: request.body.birthday,
-      //   country: request.body.country,
-      //   street: request.body.street,
-      //   city: request.body.city,
-      //   memberTypeId: request.body.memberTypeId,
-      // });
-      const req = await fastify.db.profiles.change(request.params.id, {
-        ...profile
-        , ...request.body
-      });
+      const {id, ...arg} = profile;
+      const rew = {...arg, ...request.body}
+      const req = await fastify.db.profiles.change(request.params.id, rew);
       return req;
     }
   );
