@@ -44,6 +44,18 @@ const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
       if (Object.keys(request.body).length < 7) {
         throw fastify.httpErrors.badRequest();
       }
+      const users = await fastify.db.users.findMany();
+      const isUser = users.find((user) => user.id === request.body.userId);
+      if (!isUser) {
+        throw fastify.httpErrors.badRequest('User not found');
+      }
+      const memberTypes = await fastify.db.memberTypes.findMany();
+      const isMemberType = memberTypes.find(
+        (memberType) => memberType.id === request.body.memberTypeId
+      );
+      if (!isMemberType) {
+        throw fastify.httpErrors.badRequest('Member type not found');
+      }
       try {
         const profile = await fastify.db.profiles.create({
           avatar: request.body.avatar,
