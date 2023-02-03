@@ -56,6 +56,13 @@ const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
       if (!isMemberType) {
         throw fastify.httpErrors.badRequest('Member type not found');
       }
+      const profiles = await fastify.db.profiles.findMany();
+      const isProfile = profiles.find(
+        (profile) => profile.userId === request.body.userId
+      );
+      if (isProfile) {
+        throw fastify.httpErrors.badRequest('Profile already exists');
+      }
       try {
         const profile = await fastify.db.profiles.create({
           avatar: request.body.avatar,
@@ -83,16 +90,16 @@ const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
       },
     },
     async function (request, reply): Promise<ProfileEntity> {
-      const isId = await fastify.db.users.findOne({
+      const profile = await fastify.db.profiles.findOne({
         key: 'id',
         equals: request.params.id,
       });
-      if (isId === null) {
+      if (profile === null) {
         throw fastify.httpErrors.badRequest('User not found');
       }
+      
 
       const req = await fastify.db.profiles.delete(request.params.id);
-
       return req;
     }
   );
@@ -113,11 +120,11 @@ const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
       if (profile === null) {
         throw fastify.httpErrors.badRequest();
       }
-      if (Object.keys(request.body)) {
+      if (Object.keys(request.body).length < 1) {
         throw fastify.httpErrors.badRequest();
       }
       const {id, ...arg} = profile;
-      const rew = {...arg, ...request.body}
+      const rew = {...arg, ...request.body};
       const req = await fastify.db.profiles.change(request.params.id, rew);
       return req;
     }

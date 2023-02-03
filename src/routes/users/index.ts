@@ -11,7 +11,7 @@ const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
   fastify
 ): Promise<void> => {
   fastify.get('/', async function (request, reply): Promise<UserEntity[]> {
-    const req = fastify.db.users.findMany();
+    const req = await fastify.db.users.findMany();
 
     return req;
   });
@@ -79,6 +79,12 @@ const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
       (await posts).map((post) => {
         if (post.userId === request.params.id) {
           fastify.db.posts.delete(post.id);
+        }
+      });
+      const profiles = fastify.db.profiles.findMany();
+      (await profiles).map((profile) => {
+        if (profile.userId === request.params.id) {
+          fastify.db.profiles.delete(profile.id);
         }
       });
 
