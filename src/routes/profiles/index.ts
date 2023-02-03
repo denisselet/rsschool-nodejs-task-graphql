@@ -6,9 +6,11 @@ import type { ProfileEntity } from '../../utils/DB/entities/DBProfiles';
 const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
   fastify
 ): Promise<void> => {
-  fastify.get('/', async function (request, reply): Promise<
-    ProfileEntity[]
-  > {});
+  fastify.get('/', async function (request, reply): Promise<ProfileEntity[]> {
+    const profiles = await fastify.db.profiles.findMany();
+
+    return profiles;
+  });
 
   fastify.get(
     '/:id',
@@ -17,7 +19,18 @@ const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
         params: idParamSchema,
       },
     },
-    async function (request, reply): Promise<ProfileEntity> {}
+    async function (request, reply): Promise<ProfileEntity> {
+      const profile = await fastify.db.profiles.findOne({
+        key: 'id',
+        equals: request.params.id,
+      });
+
+      if (profile === null) {
+        throw fastify.httpErrors.notFound();
+      }
+
+      return profile;
+    }
   );
 
   fastify.post(
@@ -27,7 +40,46 @@ const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
         body: createProfileBodySchema,
       },
     },
-    async function (request, reply): Promise<ProfileEntity> {}
+    async function (request, reply): Promise<ProfileEntity> {
+      if (Object.keys(request.body).length < 7) {
+        throw fastify.httpErrors.badRequest();
+      }
+      const users = await fastify.db.users.findMany();
+      const isUser = users.find((user) => user.id === request.body.userId);
+      if (!isUser) {
+        throw fastify.httpErrors.badRequest('User not found');
+      }
+      const memberTypes = await fastify.db.memberTypes.findMany();
+      const isMemberType = memberTypes.find(
+        (memberType) => memberType.id === request.body.memberTypeId
+      );
+      if (!isMemberType) {
+        throw fastify.httpErrors.badRequest('Member type not found');
+      }
+      const profiles = await fastify.db.profiles.findMany();
+      const isProfile = profiles.find(
+        (profile) => profile.userId === request.body.userId
+      );
+      if (isProfile) {
+        throw fastify.httpErrors.badRequest('Profile already exists');
+      }
+      try {
+        const profile = await fastify.db.profiles.create({
+          avatar: request.body.avatar,
+          sex: request.body.sex,
+          birthday: request.body.birthday,
+          country: request.body.country,
+          street: request.body.street,
+          city: request.body.city,
+          memberTypeId: request.body.memberTypeId,
+          userId: request.body.userId,
+        });
+
+        return profile;
+      } catch {
+        throw fastify.httpErrors.badRequest();
+      }
+    }
   );
 
   fastify.delete(
@@ -37,7 +89,19 @@ const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
         params: idParamSchema,
       },
     },
-    async function (request, reply): Promise<ProfileEntity> {}
+    async function (request, reply): Promise<ProfileEntity> {
+      const profile = await fastify.db.profiles.findOne({
+        key: 'id',
+        equals: request.params.id,
+      });
+      if (profile === null) {
+        throw fastify.httpErrors.badRequest('User not found');
+      }
+      
+
+      const req = await fastify.db.profiles.delete(request.params.id);
+      return req;
+    }
   );
 
   fastify.patch(
@@ -48,7 +112,22 @@ const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
         params: idParamSchema,
       },
     },
-    async function (request, reply): Promise<ProfileEntity> {}
+    async function (request, reply): Promise<ProfileEntity> {
+      const profile = await fastify.db.profiles.findOne({
+        key: 'id',
+        equals: request.params.id,
+      });
+      if (profile === null) {
+        throw fastify.httpErrors.badRequest();
+      }
+      if (Object.keys(request.body).length < 1) {
+        throw fastify.httpErrors.badRequest();
+      }
+      const {id, ...arg} = profile;
+      const rew = {...arg, ...request.body};
+      const req = await fastify.db.profiles.change(request.params.id, rew);
+      return req;
+    }
   );
 };
 
