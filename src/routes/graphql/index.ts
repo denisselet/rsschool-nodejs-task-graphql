@@ -35,6 +35,16 @@ const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
         title: 'test',
         content: 'test',
       });
+      await fastify.db.posts.create({
+        userId: id,
+        title: 'test2',
+        content: 'test2',
+      });
+      // await fastify.db.memberTypes.create({
+      //   id: id,
+      //   monthPostsLimit: 1,
+      //   discount: 1,
+      // });
       
       const ret = await test();
       const source = `${request.body.query}`;

@@ -103,13 +103,6 @@ export const test = async () => {
       new GraphQLObjectType({
         name: 'RootQueryType',
         fields: {
-          test: {
-            type: UserType,
-            args: { id: { type: GraphQLID } },
-            resolve: async (parent, args) => {
-              return args;
-            },
-          },
           users: {
             type: new GraphQLList(UserType),
             resolve: async (parent, args) => {
